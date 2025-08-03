@@ -1,42 +1,55 @@
 <template>
   <el-aside width="200px" class="sidebar">
-    <el-menu :default-openeds="['1']" @select="handleMenuSelect">
-      <el-menu-item index="1">
+    <el-menu :default-openeds="['1', '5']" :default-active="currentRoute" @select="handleMenuSelect" router>
+      <el-menu-item index="/dashboard">
         <el-icon><HomeFilled /></el-icon>
         <span>活动概览</span>
       </el-menu-item>
-      <el-menu-item index="2">
+      <el-menu-item index="/dashboard/users">
         <el-icon><user /></el-icon>
         <span>用户管理</span>
       </el-menu-item>
-      <el-menu-item index="3">
-        <el-icon><key /></el-icon>
-        <span>角色管理</span>
-      </el-menu-item>
-      <el-menu-item index="4">
-        <el-icon><lock /></el-icon>
-        <span>权限管理</span>
-      </el-menu-item>
+      <el-sub-menu index="5">
+        <template #title>
+          <el-icon><Lock /></el-icon>
+          <span>权限管理</span>
+        </template>
+        <el-menu-item index="/dashboard/roles">
+          <el-icon><user /></el-icon>
+          <span>角色管理</span>
+        </el-menu-item>
+        <el-menu-item index="/dashboard/permissions/policy">
+          <el-icon><Key /></el-icon>
+          <span>权限管理</span>
+        </el-menu-item>
+        <el-menu-item index="/dashboard/roles/permissions">
+          <el-icon><Lock /></el-icon>
+          <span>角色权限管理</span>
+        </el-menu-item>
+      </el-sub-menu>
     </el-menu>
   </el-aside>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { Menu, User, Key, Lock } from '@element-plus/icons-vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Menu, User, Key, Lock, HomeFilled } from '@element-plus/icons-vue'
+import { ref, watch } from 'vue'
 
 const router = useRouter()
+const route = useRoute()
+const currentRoute = ref(route.path)
+
+// 监听路由变化更新当前选中项
+watch(
+  () => route.path,
+  (newPath) => {
+    currentRoute.value = newPath
+  }
+)
 
 const handleMenuSelect = (index) => {
-  if (index === '1') {
-    router.push('/dashboard')
-  } else if (index === '2') {
-    router.push('/dashboard/users')
-  } else if (index === '3') {
-    router.push('/dashboard/roles')
-  } else if (index === '4') {
-    router.push('/dashboard/permissions')
-  }
+  router.push(index)
 }
 </script>
 
@@ -57,13 +70,19 @@ const handleMenuSelect = (index) => {
   border-right: none !important;
 }
 
-/* 导航文字颜色设置为白色 */
+/* 导航文字和图标颜色设置 */
 .sidebar .el-menu-item,
 .sidebar .el-sub-menu__title,
 .sidebar .el-menu-item span,
-.sidebar .el-sub-menu__title span {
+.sidebar .el-sub-menu__title span,
+.sidebar .el-icon {
   color: #ffffff !important;
   --el-menu-text-color: #ffffff !important;
+}
+
+/* 统一图标颜色 */
+.sidebar .el-icon {
+  color: #409eff !important;
 }
 
 /* 所有选中状态样式 - 采用更深的蓝色突出选中状态 */

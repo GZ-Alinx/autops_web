@@ -8,17 +8,20 @@
     </template>
     <el-table :data="users" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80"></el-table-column>
-      <el-table-column prop="username" label="用户名"></el-table-column>
+      <el-table-column prop="username" label="用户名" width="180"></el-table-column>
       <el-table-column prop="email" label="邮箱"></el-table-column>
-      <el-table-column prop="role" label="角色"></el-table-column>
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column label="角色" width="480">
         <template #default="scope">
-          <el-switch v-model="scope.row.status" active-color="#13ce66" inactive-color="#ff4949"></el-switch>
+          <span v-for="(role, index) in scope.row.roles" :key="index">
+            {{ role.name }}{{ index < scope.row.roles.length - 1 ? ', ' : '' }}
+          </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+
+      <el-table-column label="操作" width="420" fixed="right">
         <template #default="scope">
           <el-button type="primary" size="small" @click="handleEditUser(scope.row)">编辑</el-button>
+          <el-button type="warning" size="small" @click="handleChangePassword(scope.row)">修改密码</el-button>
           <el-button type="success" size="small" @click="handleAssignRole(scope.row)">分配角色</el-button>
           <el-button type="danger" size="small" @click="handleDeleteUser(scope.row.id)">删除</el-button>
         </template>
@@ -35,6 +38,27 @@
       />
     </div>
   </el-card>
+
+    <!-- 修改密码模态框 -->
+    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
+      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
+        <el-form-item label="用户名称" prop="username">
+          <el-input v-model="passwordForm.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="旧密码" prop="old_password">
+          <el-input v-model="passwordForm.old_password" type="password" placeholder="请输入旧密码"></el-input>
+        </el-form-item>
+        <el-form-item label="新密码" prop="new_password">
+          <el-input v-model="passwordForm.new_password" type="password" placeholder="请输入新密码"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="passwordDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitPasswordForm">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
 
     <!-- 分配角色模态框 -->
     <el-dialog v-model="roleDialogVisible" title="分配角色" width="400px">
@@ -61,7 +85,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUserList, deleteUser } from '../api/user'
+import { getUserList, deleteUser, changePassword } from '../api/user'
 import { updateUserRole } from '../api/permission'
 import { getRoles } from '../api/role'
 import { ElMessage, ElDialog } from 'element-plus'
@@ -75,6 +99,25 @@ const users = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// 修改密码相关
+const passwordDialogVisible = ref(false)
+const passwordForm = reactive({
+  user_id: '',
+  username: '',
+  old_password: '',
+  new_password: ''
+})
+const passwordRules = {
+  old_password: [
+    { required: true, message: '请输入旧密码', trigger: 'blur' }
+  ],
+  new_password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码长度至少为6位', trigger: 'blur' }
+  ]
+}
+const passwordFormRef = ref(null)
 
 // 分配角色相关
 const roleDialogVisible = ref(false)
@@ -149,6 +192,36 @@ const handleDeleteUser = async (id) => {
       ElMessage.error('删除用户失败')
       console.error('删除用户失败:', error)
     }
+}
+
+// 打开修改密码模态框
+const handleChangePassword = (user) => {
+  passwordForm.user_id = user.id
+  passwordForm.username = user.username
+  passwordForm.old_password = ''
+  passwordForm.new_password = ''
+  passwordDialogVisible.value = true
+}
+
+// 提交密码修改表单
+const submitPasswordForm = async () => {
+  passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const userId = passwordForm.user_id
+        const requestData = {
+          old_password: passwordForm.old_password,
+          new_password: passwordForm.new_password
+        }
+        await changePassword(userId, requestData)
+        ElMessage.success('密码修改成功')
+        passwordDialogVisible.value = false
+      } catch (error) {
+        ElMessage.error('密码修改失败')
+        console.error('密码修改失败:', error)
+      }
+    }
+  })
 }
 
 // 打开分配角色模态框

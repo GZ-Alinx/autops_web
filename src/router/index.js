@@ -9,11 +9,21 @@ import RoleManagement from '../views/RoleManagement.vue'
 import AddRole from '../views/AddRole.vue'
 import EditRole from '../views/EditRole.vue'
 import PermissionManagement from '../views/PermissionManagement.vue'
+import PermissionList from '../views/PermissionList.vue'
+import RolePermissionManagement from '../views/RolePermissionManagement.vue'
 
 const routes = [
   {
     path: '/',
     redirect: '/login'
+  },
+  {
+    path: '/permissions',
+    redirect: '/dashboard/permissions'
+  },
+  {
+    path: '/permissions/policy',
+    redirect: '/dashboard/permissions/policy'
   },
   {
     path: '/login',
@@ -33,16 +43,52 @@ const routes = [
         name: 'DashboardHome',
         component: DashboardHome
       },
-      {        path: 'users',               name: 'UserList',           component: UserList      },      
-      {        path: 'users/add',           name: 'AddUser',            component: AddUser      },
-      {        path: 'users/edit/:id',      name: 'EditUser',           component: EditUser      },
-      {        path: 'roles',               name: 'RoleManagement',     component: RoleManagement      },
-      {        path: 'roles/add',           name: 'AddRole',            component: AddRole      },
-      {        path: 'roles/edit/:id',      name: 'EditRole',           component: EditRole      },
+      {
+        path: 'users',
+        name: 'UserList',
+        component: UserList
+      },      
+      {
+        path: 'users/add',
+        name: 'AddUser',
+        component: AddUser
+      },
+      {
+        path: 'users/edit/:id',
+        name: 'EditUser',
+        component: EditUser
+      },
+      {
+        path: 'roles',
+        name: 'RoleManagement',
+        component: RoleManagement
+      },
+      {
+        path: 'roles/add',
+        name: 'AddRole',
+        component: AddRole
+      },
+      {
+        path: 'roles/edit/:id',
+        name: 'EditRole',
+        component: EditRole
+      },
+      {
+        path: 'roles/permissions',
+        name: 'RolePermissionManagement',
+        component: RolePermissionManagement
+      },
       {
         path: 'permissions',
-        name: 'PermissionManagement',
-        component: PermissionManagement
+        name: 'PermissionList',
+        component: PermissionList,
+        children: [
+          {
+            path: 'policy',
+            name: 'PermissionManagement',
+            component: PermissionManagement
+          }
+        ]
       }
     ]
   }

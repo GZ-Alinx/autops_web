@@ -60,8 +60,13 @@ const handleLogin = () => {
         // 跳转到首页
         router.push('/dashboard')
       } catch (error) {
-        ElMessage.error('登录失败: ' + (error.message || '用户名或密码错误'))
-      }
+          // 检查是否是401错误
+          if (error.response && error.response.status === 401) {
+            ElMessage.error('密码错误')
+          } else {
+            ElMessage.error('登录失败: ' + (error.message || '用户名或密码错误'))
+          }
+        }
     }
   })
 }
