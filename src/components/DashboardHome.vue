@@ -83,7 +83,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 // import { Users, User, UserPlus, Key, Monitor } from '@element-plus/icons-vue'
 import request from '../utils/request'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 
 // 统计数据
 const totalUsers = ref(0)
@@ -130,10 +130,10 @@ const getStatistics = async () => {
     ]
   } catch (error) {
     if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
+      MessageUtil.warning('没有操作权限')
       return Promise.reject(error)
     }else {
-      ElMessage.error('获取统计数据失败')
+      MessageUtil.error('获取统计数据失败')
       console.error('获取统计数据失败:', error)
     }
   }
@@ -141,9 +141,9 @@ const getStatistics = async () => {
 
 // 测试系统健康状态连接
 const testSystemHealth = async () => {
-  ElMessage.info('正在测试系统健康状态连接...')
+  MessageUtil.info('正在测试系统健康状态连接...')
   await getSystemHealth()
-  ElMessage({ message: `测试结果: ${systemStatusText.value}`, type: systemStatus.value === 'online' ? 'success' : 'error' })
+  MessageUtil[systemStatus.value === 'online' ? 'success' : 'error'](`测试结果: ${systemStatusText.value}`)
 }
 
 // 获取系统健康状态

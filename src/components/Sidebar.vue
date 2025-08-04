@@ -3,7 +3,7 @@
     <el-menu :default-openeds="['1', '5']" :default-active="currentRoute" @select="handleMenuSelect" router>
       <el-menu-item index="/dashboard">
         <el-icon><HomeFilled /></el-icon>
-        <span>活动概览</span>
+        <span>用户概览</span>
       </el-menu-item>
       <el-menu-item index="/dashboard/users">
         <el-icon><user /></el-icon>
@@ -12,7 +12,7 @@
       <el-sub-menu index="5">
         <template #title>
           <el-icon><Lock /></el-icon>
-          <span>权限管理</span>
+          <span>权限与角色管理</span>
         </template>
         <el-menu-item index="/dashboard/roles">
           <el-icon><user /></el-icon>
@@ -24,7 +24,7 @@
         </el-menu-item>
         <el-menu-item index="/dashboard/roles/permissions">
           <el-icon><Lock /></el-icon>
-          <span>角色权限管理</span>
+          <span>角色权限关联</span>
         </el-menu-item>
       </el-sub-menu>
     </el-menu>
@@ -33,7 +33,6 @@
 
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
-import { Menu, User, Key, Lock, HomeFilled } from '@element-plus/icons-vue'
 import { ref, watch } from 'vue'
 
 const router = useRouter()

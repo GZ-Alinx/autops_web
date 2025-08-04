@@ -40,7 +40,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { addUser } from '../api/user'
 import { useRouter } from 'vue-router'
 
@@ -80,10 +80,10 @@ const submitForm = async () => {
     if (valid) {
       try {
         await addUser(userForm)
-        ElMessage.success('添加用户成功')
+        MessageUtil.success('添加用户成功')
         router.push('/dashboard/users')
       } catch (error) {
-        ElMessage.error('添加用户失败')
+        MessageUtil.error('添加用户失败')
         console.error('Failed to add user:', error)
       }
     }

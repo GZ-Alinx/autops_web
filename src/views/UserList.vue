@@ -88,7 +88,10 @@ import { useRouter } from 'vue-router'
 import { getUserList, deleteUser, changePassword } from '../api/user'
 import { updateUserRole } from '../api/permission'
 import { getRoles } from '../api/role'
-import { ElMessage, ElDialog } from 'element-plus'
+import MessageUtil from '../utils/message.js'
+
+// 用于跟踪是否已经显示权限提示
+const permissionAlertShown = ref(false)
 
 
 // 路由
@@ -143,10 +146,13 @@ const getRolesList = async () => {
     roles.value = res.data.map(role => role.name)
   } catch (error) {
     if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
+      if (!permissionAlertShown.value) {
+        MessageUtil.warning('没有操作权限')
+        permissionAlertShown.value = true
+      }
       return Promise.reject(error)
     }else {
-      ElMessage.error('获取角色列表失败')
+      MessageUtil.error('获取角色列表失败')
       console.error('获取统计数据失败:', error)
     }}
 }
@@ -163,10 +169,13 @@ const getUsers = async () => {
     total.value = res.data.total || 0
   } catch (error) {
     if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
+      if (!permissionAlertShown.value) {
+        MessageUtil.warning('没有操作权限')
+        permissionAlertShown.value = true
+      }
       return Promise.reject(error)
     }else {
-      ElMessage.error('获取用户列表失败')
+      MessageUtil.error('获取用户列表失败')
       console.error('获取用户列表失败:', error)
     }}
 }
@@ -186,10 +195,10 @@ const handleEditUser = (user) => {
 const handleDeleteUser = async (id) => {
   try {
     await deleteUser(id)
-    ElMessage.success('删除用户成功')
+    MessageUtil.success('删除用户成功')
     getUsers()
   } catch (error) {
-      ElMessage.error('删除用户失败')
+      MessageUtil.error('删除用户失败')
       console.error('删除用户失败:', error)
     }
 }
@@ -214,10 +223,10 @@ const submitPasswordForm = async () => {
           new_password: passwordForm.new_password
         }
         await changePassword(userId, requestData)
-        ElMessage.success('密码修改成功')
+        MessageUtil.success('密码修改成功')
         passwordDialogVisible.value = false
       } catch (error) {
-        ElMessage.error('密码修改失败')
+        MessageUtil.error('密码修改失败')
         console.error('密码修改失败:', error)
       }
     }
@@ -252,11 +261,11 @@ const submitRoleForm = async () => {
               }
               console.log('分配角色请求参数:', requestData)
               await updateUserRole(requestData)
-              ElMessage.success('分配角色成功')
+              MessageUtil.success('分配角色成功')
               roleDialogVisible.value = false
               getUsers()
             } catch (error) {
-              ElMessage.error('分配角色失败')
+              MessageUtil.error('分配角色失败')
               console.error('分配角色失败:', error)
               console.error('错误详情:', error.response?.data || error.message)
             }

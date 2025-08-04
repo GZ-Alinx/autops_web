@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useUserStore } from '../store'
 import router from '../router'
-import { ElMessage } from 'element-plus'
+import MessageUtil from './message.js'
 // 创建axios实例
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -15,6 +15,10 @@ service.interceptors.request.use(
     if (userStore.token) {
       config.headers['Authorization'] = `Bearer ${userStore.token}`
     }
+    // 添加请求日志
+    console.log('请求URL:', config.url)
+    console.log('请求方法:', config.method)
+    console.log('请求参数:', config.data || '无')
     return config
   },
   error => {
@@ -37,11 +41,21 @@ service.interceptors.response.use(
         console.error('接口错误:', res.message || '请求失败')
         return Promise.reject(new Error(res.message || '请求失败'))
     } else {
+        // 添加响应日志
+        console.log('响应数据:', res)
         return res
     }
   },
   error => {
     console.error('响应错误:', error)
+    // 打印更详细的错误信息，特别是400错误
+    if (error.response) {
+          console.error('错误状态码:', error.response.status)
+          console.error('错误响应数据:', JSON.stringify(error.response.data))
+          if (error.response.status === 400) {
+            console.error('400错误详情:', JSON.stringify(error.response.data))
+          }
+        }
     // 处理401认证失败
     if (error.response && error.response.status === 401) {
       const userStore = useUserStore()
@@ -50,9 +64,7 @@ service.interceptors.response.use(
     }
     // 处理403权限错误
     else if (error.response && error.response.status === 403) {
-      // 弹出提示信息
-      ElMessage.warning('无操作权限')
-      // 传递错误以便组件处理
+      // 传递错误以便组件处理，不在此处弹出提示
       return Promise.reject(error)
     }
     // 特殊处理删除权限的404错误

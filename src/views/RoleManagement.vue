@@ -38,7 +38,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { Plus } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getRoles, deleteRole } from '../api/role'
@@ -61,10 +61,10 @@ const getRolesList = async () => {
     total.value = res.data.total || 0
   } catch (error) {
     if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
+      MessageUtil.warning('没有操作权限')
       return Promise.reject(error)
     }else {
-      ElMessage.error('获取角色列表失败')
+      MessageUtil.error('获取角色列表失败')
       console.error('Failed to get roles list:', error)
     }}
 }
@@ -83,14 +83,14 @@ const handleEdit = (row) => {
 const handleDelete = async (row) => {
   try {
     await deleteRole(row.id)
-    ElMessage.success('删除角色成功')
+    MessageUtil.success('删除角色成功')
     getRolesList()
   } catch (error) {
     if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
+      MessageUtil.warning('没有操作权限')
       return Promise.reject(error)
     }else {
-      ElMessage.error('删除角色失败')
+      MessageUtil.error('删除角色失败')
       console.error('Failed to delete role:', error)
     }}
 }

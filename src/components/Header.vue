@@ -10,7 +10,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store'
 
@@ -33,7 +33,7 @@ const emit = defineEmits(['logout'])
 const handleLogout = () => {
   userStore.logout()
   router.push('/login')
-  ElMessage.success('退出登录成功')
+  MessageUtil.success('退出登录成功')
   emit('logout')
 }
 </script>

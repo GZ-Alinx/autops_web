@@ -8,6 +8,7 @@ import request from '../utils/request'
  * @returns {Promise}
  */
 export function createRole(data) {
+  console.log('创建角色参数:', data)
   return request({
     url: '/roles/',
     method: 'POST',
@@ -32,29 +33,45 @@ export function getRoles() {
  * @returns {Promise}
  */
 export function getRoleDetail(id) {
+  // 确保id是数字类型
+  const numericId = Number(id);
+  if (isNaN(numericId)) {
+    return Promise.reject(new Error('无效的角色ID'));
+  }
+  
   return request({
-    url: `/roles/${id}`,
+    url: `/roles/${numericId}`,
     method: 'GET'
   })
 }
 
 /**
  * 更新角色
- * @param {number} id - 角色ID
  * @param {Object} data - 更新参数
+ * @param {number} [data.ID] - 角色ID
  * @param {string} [data.name] - 角色名称
  * @param {string} [data.description] - 角色描述
  * @returns {Promise}
  */
-export function updateRole(id, data) {
+export function updateRole(data) {
+  // 确保id是数字类型
+  if (isNaN(data.ID)) {
+    console.error('无效的角色ID:', id);
+    return Promise.reject(new Error('无效的角色ID'));
+  }
+  
+  const requestData = {
+    ...data
+  };
+  
+  console.log('updateRole - data:', data);
+  console.log('updateRole - 请求数据:', requestData);
+  
   // 确保请求体中包含ID字段
   return request({
-    url: `/roles/${id}`,
+    url: `/roles/`,
     method: 'PUT',
-    data: {
-      ID: id,
-      ...data
-    }
+    data: requestData
   })
 }
 

@@ -11,7 +11,7 @@
           <el-input v-model="roleForm.name" placeholder="请输入角色名称"></el-input>
         </el-form-item>
         <el-form-item label="角色描述" prop="description">
-          <el-input v-model="roleForm.description" type="textarea" placeholder="请输入角色描述"></el-input>
+          <el-input v-model="roleForm.describe" type="textarea" placeholder="请输入角色描述"></el-input>
         </el-form-item>
       </el-form>
       <div class="btn-container">
@@ -24,7 +24,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { useRouter } from 'vue-router'
 import { createRole } from '../api/role'
 
@@ -54,11 +54,14 @@ const submitForm = async () => {
   roleFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        await createRole(roleForm)
-        ElMessage.success('创建角色成功')
+        await createRole({
+          name: roleForm.name,
+          description: roleForm.description
+        })
+        MessageUtil.success('创建角色成功')
         router.push('/dashboard/roles')
       } catch (error) {
-        ElMessage.error('创建角色失败')
+        MessageUtil.error('创建角色失败')
         console.error('Failed to create role:', error)
       }
     }

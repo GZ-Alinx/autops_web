@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { getUserDetail, updateUser } from '../api/user'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -74,7 +74,7 @@ const getUserInfo = async () => {
     userForm.nickname = res.data.nickname || ''
     userForm.status = res.data.status || 1
   } catch (error) {
-    ElMessage.error('获取用户详情失败')
+    MessageUtil.error('获取用户详情失败')
     console.error('Failed to get user detail:', error)
   }
 }
@@ -85,10 +85,10 @@ const submitForm = async () => {
     if (valid) {
       try {
         await updateUser(userId, userForm)
-        ElMessage.success('更新用户成功')
+        MessageUtil.success('更新用户成功')
         router.push('/dashboard/users')
       } catch (error) {
-        ElMessage.error('更新用户失败')
+        MessageUtil.error('更新用户失败')
         console.error('Failed to update user:', error)
       }
     }

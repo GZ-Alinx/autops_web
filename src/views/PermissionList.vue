@@ -36,8 +36,8 @@
         <el-form-item label="权限ID" prop="id" v-if="dialogType === 'view'">
           <el-input v-model="permissionForm.id" placeholder="权限ID" disabled></el-input>
         </el-form-item>
-        <el-form-item label="权限描述" prop="description">
-          <el-input v-model="permissionForm.description" placeholder="请输入权限描述" :disabled="dialogType === 'view'" clearable></el-input>
+        <el-form-item label="权限描述" prop="describe">
+          <el-input v-model="permissionForm.describe" placeholder="请输入权限描述" :disabled="dialogType === 'view'" clearable></el-input>
         </el-form-item>
         <el-form-item label="资源路径" prop="resource">
           <el-input v-model="permissionForm.resource" placeholder="请输入资源路径" :disabled="dialogType === 'view'"></el-input>
@@ -64,7 +64,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { Plus, Lock } from '@element-plus/icons-vue'
 import { getPermissions, addPermission, updateUserRole, deletePermission } from '../api/permission'
 
@@ -100,7 +100,7 @@ const getPermissionList = async () => {
     const res = await getPermissions()
     // 直接使用API返回的对象数组
     permissions.value = res.data.map(permission => {
-      // 检查description字段是否存在，如果不存在，使用'无描述'
+      // 检查describe字段是否存在，如果不存在，使用'无描述'
       const desc = permission.description || '无描述';
       return {
         id: permission.id,
@@ -119,14 +119,14 @@ const getPermissionList = async () => {
 
 // 统一错误处理函数
 const handleError = (error, defaultMessage) => {
-  if (error.response && error.response.status === 403) {
-    ElMessage.warning('没有操作权限')
-  } else {
-    ElMessage.error(defaultMessage)
-    console.error(defaultMessage + ':', error)
+    if (error.response && error.response.status === 403) {
+      MessageUtil.warning('没有操作权限')
+    } else {
+      MessageUtil.error(defaultMessage)
+      console.error(defaultMessage + ':', error)
+    }
+    return Promise.reject(error)
   }
-  return Promise.reject(error)
-}
 
 // 新增权限
 const handleAddPermission = () => {
@@ -136,7 +136,6 @@ const handleAddPermission = () => {
   if (permissionFormRef.value) {
     permissionFormRef.value.resetFields()
   }
-  permissionForm.id = ''
   permissionForm.resource = ''
   permissionForm.action = ''
   permissionForm.description = ''
@@ -158,32 +157,81 @@ const handleView = (row) => {
 const handleDelete = async (row) => {
   try {
     // 直接调用删除权限API，让后端处理复杂的关联关系
-    await deletePermission({
-      id: row.id,
-      path: row.resource,
-      method: row.action
-    });
-    ElMessage.success('删除权限成功');
+    const deleteData = {
+        path: row.resource,
+        method: row.action,
+        description: row.description
+      };
+    console.log('删除权限请求参数:', deleteData);
+    const response = await deletePermission(deleteData);
+    console.log('删除权限响应结果:', response);
+    MessageUtil.success('删除权限成功');
     getPermissionList();
   } catch (error) {
+    console.error('删除权限失败详细信息:', error);
+    if (error.response) {
+      console.error('错误状态码:', error.response.status);
+      console.error('错误响应数据:', error.response.data);
+    }
     handleError(error, '删除权限失败')
   }
 }
 
+// 测试删除权限的函数
+window.testDeletePermission = async (path, method, description) => {
+  try {
+    const testData = {
+      describe: description || '测试权限',
+      path: path || '/api/v1/test/*',
+      method: method || 'GET'
+    };
+    console.log('测试删除权限参数:', testData);
+    await deletePermission(testData);
+    MessageUtil.success('测试权限删除成功');
+    getPermissionList();
+  } catch (error) {
+    handleError(error, '测试权限删除失败');
+  }
+}
+
+// 测试删除权限函数 - 使用最新参数格式
+window.testDeletePermissionV2 = async function(description = '测试权限', path = '/api/v1/users/*', method = 'POST') {
+  try {
+    console.log('测试删除权限参数:', { description, path, method });
+    const response = await deletePermission({
+      description,
+      path,
+      method
+    });
+    console.log('删除权限成功:', response);
+    MessageUtil.success('删除权限成功');
+    // 刷新权限列表
+    getPermissionList();
+  } catch (error) {
+    console.error('删除权限失败:', error);
+    MessageUtil.error(`删除权限失败: ${error.message || '未知错误'}`);
+  }
+};
+
 // 提交表单
 const submitForm = async () => {
+  // 添加调试日志，查看表单验证状态
+  console.log('表单验证前数据:', permissionForm)
   permissionFormRef.value.validate(async (valid) => {
+    console.log('表单验证结果:', valid)
     if (valid) {
       try {
-        // 确保description字段存在且不为空字符串
-        const description = permissionForm.description || '无描述';
-        await addPermission({
-          role: 'admin', // 后续可优化为从角色选择中获取
+        // 确保 describe 字段存在且不为空字符串
+        const description = permissionForm.describe || '无描述';
+        // 添加日志以调试请求参数
+        const requestData = {
           path: permissionForm.resource,
           method: permissionForm.action,
           description
-        })
-        ElMessage.success('添加权限成功')
+        }
+        console.log('添加权限请求参数:', requestData)
+        await addPermission(requestData)
+        MessageUtil.success('添加权限成功')
         dialogVisible.value = false
         getPermissionList()
       } catch (error) {
@@ -197,6 +245,7 @@ const submitForm = async () => {
 onMounted(() => {
   getPermissionList()
 })
+
 </script>
 
 <style scoped>

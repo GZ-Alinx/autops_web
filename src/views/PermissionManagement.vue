@@ -4,14 +4,14 @@
       <template #header>
         <div class="card-header">
           <el-icon><Key /></el-icon>
-          <span>角色权限管理</span>
+          <span>权限管理</span>
           <el-button type="primary" size="small" class="add-permission-btn" @click="handleAddPermission">
-            <el-icon><Plus /></el-icon> 新增角色权限
+            <el-icon><Plus /></el-icon> 新增权限
           </el-button>
         </div>
       </template>
       <div class="search-container">
-        <el-input v-model="searchRole" placeholder="输入角色名称搜索" class="search-input" />
+        <el-input v-model="searchDescribe" placeholder="输入权限描述搜索" class="search-input" />
         <el-select v-model="searchMethod" placeholder="选择HTTP方法筛选" class="search-select">
           <el-option label="全部" value="" />
           <el-option label="GET" value="GET" />
@@ -24,7 +24,7 @@
         <el-button @click="resetSearch">重置</el-button>
       </div>
       <el-table :data="pagedPermissionPolicies" style="width: 100%">
-        <el-table-column prop="role" label="角色名称" width="180" />
+        <el-table-column prop="describe" label="权限描述" width="250" />
         <el-table-column prop="path" label="资源路径" width="250" />
         <el-table-column prop="method" label="HTTP方法" width="120" />
         <el-table-column label="操作" width="150" fixed="right">
@@ -49,10 +49,8 @@
     <!-- 新增/编辑角色权限模态框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form :model="permissionForm" :rules="rules" ref="permissionFormRef" label-width="100px">
-        <el-form-item label="角色名称" prop="role">
-          <el-select v-model="permissionForm.role" placeholder="请选择角色名称">
-            <el-option v-for="role in roles" :key="role.id" :label="role.name" :value="role.name"></el-option>
-          </el-select>
+        <el-form-item label="权限描述" prop="describe">
+          <el-input v-model="permissionForm.describe" placeholder="请输入权限描述"></el-input>
         </el-form-item>
         <el-form-item label="资源路径" prop="path">
           <el-input v-model="permissionForm.path" placeholder="请输入资源路径"></el-input>
@@ -79,21 +77,18 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { Plus, Key } from '@element-plus/icons-vue'
+// ElMessageBox已在MessageUtil中封装，无需单独导入
 import { addPermission, deletePermission, getPermissions } from '../api/permission'
-import { getRoles } from '../api/role'
 
 // 权限策略列表数据
 const permissionPolicies = ref([])
 // 原始权限策略列表，用于搜索和筛选
 const allPermissionPolicies = ref([])
 
-// 角色列表
-const roles = ref([])
-
 // 搜索和筛选条件
-const searchRole = ref('')
+const searchDescribe = ref('')
 const searchMethod = ref('')
 
 // 分页相关
@@ -105,13 +100,13 @@ const pagedPermissionPolicies = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增角色权限')
 const permissionForm = reactive({
-  role: '',
+  describe: '',
   path: '',
   method: ''
 })
 const rules = {
-  role: [
-    { required: true, message: '请选择角色名称', trigger: 'blur' }
+  describe: [
+    { required: true, message: '请输入权限描述', trigger: 'blur' }
   ],
   path: [
     { required: true, message: '请输入资源路径', trigger: 'blur' }
@@ -125,17 +120,9 @@ const permissionFormRef = ref(null)
 const fetchPermissionPolicies = async () => {
     try {
       const res = await getPermissions()
-      // 将字符串数组转换为对象数组
-      const policies = res.data.map(policyStr => {
-        const [role, path, method] = policyStr.split(',')
-        return {
-          role,
-          path,
-          method
-        }
-      })
-      allPermissionPolicies.value = policies
-      permissionPolicies.value = policies
+      // 直接使用API返回的对象数组
+      allPermissionPolicies.value = res.data
+      permissionPolicies.value = res.data
       currentPage.value = 1
       updatePagedData()
     } catch (error) {
@@ -145,13 +132,13 @@ const fetchPermissionPolicies = async () => {
 
 // 搜索和筛选权限策略
 const handleSearch = () => {
-  if (!searchRole.value && !searchMethod.value) {
+  if (!searchDescribe.value && !searchMethod.value) {
     permissionPolicies.value = allPermissionPolicies.value
   } else {
     permissionPolicies.value = allPermissionPolicies.value.filter(policy => {
-      const roleMatch = searchRole.value ? policy.role.includes(searchRole.value) : true
+      const describeMatch = searchDescribe.value ? policy.describe.includes(searchDescribe.value) : true
       const methodMatch = searchMethod.value ? policy.method === searchMethod.value : true
-      return roleMatch && methodMatch
+      return describeMatch && methodMatch
     })
   }
   currentPage.value = 1
@@ -160,7 +147,7 @@ const handleSearch = () => {
 
 // 重置搜索和筛选条件
 const resetSearch = () => {
-  searchRole.value = ''
+  searchDescribe.value = ''
   searchMethod.value = ''
   permissionPolicies.value = allPermissionPolicies.value
   currentPage.value = 1
@@ -190,56 +177,68 @@ const handleCurrentChange = (current) => {
 // 统一错误处理函数
 const handleError = (error, defaultMessage) => {
   if (error.response && error.response.status === 403) {
-    ElMessage.warning('没有操作权限')
+    MessageUtil.warning('没有操作权限')
   } else {
-    ElMessage.error(defaultMessage)
+    MessageUtil.error(defaultMessage)
     console.error(defaultMessage + ':', error)
   }
   return Promise.reject(error)
 }
 
-// 新增角色权限
+// 新增权限
 const handleAddPermission = () => {
-  dialogTitle.value = '新增角色权限'
+  dialogTitle.value = '新增权限'
   // 重置表单
   if (permissionFormRef.value) {
     permissionFormRef.value.resetFields()
   }
-  permissionForm.role = ''
+  permissionForm.describe = ''
   permissionForm.path = ''
   permissionForm.method = ''
   dialogVisible.value = true
 }
 
-// 删除角色权限
+// 删除权限
 const handleDelete = async (row) => {
   try {
+    // 显示确认对话框
+    await MessageUtil.confirm(
+      `确定要删除权限 ${row.describe}?`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
     await deletePermission({
-        role: row.role,
+        describe: row.describe,
         path: row.path,
         method: row.method
       })
-    ElMessage.success('删除权限成功')
+    MessageUtil.success('删除权限成功')
     fetchPermissionPolicies()
   } catch (error) {
-    handleError(error, '删除权限失败')
+    // 如果是用户取消操作，不显示错误消息
+    if (error.name !== 'Error') {
+      handleError(error, '删除权限失败')
+    }
   }
 }
-
-// 提交表单
 const submitForm = async () => {
   permissionFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
         // 构建权限策略数据
         const policyData = {
-          role: permissionForm.role,
+          describe: permissionForm.describe,
           path: permissionForm.path,
           method: permissionForm.method
         }
 
         await addPermission(policyData)
-        ElMessage.success('添加权限成功')
+        MessageUtil.success('添加权限成功')
         dialogVisible.value = false
         fetchPermissionPolicies()
       } catch (error) {
@@ -251,25 +250,11 @@ const submitForm = async () => {
 
 // 无分页处理，删除相关函数
 
-// 获取角色列表
-const getRoleList = async () => {
-  try {
-    const res = await getRoles()
-    roles.value = res.data
-  } catch (error) {
-    if (error.response && error.response.status === 403) {
-      ElMessage.warning('没有操作权限')
-    } else {
-      ElMessage.error('获取角色列表失败')
-      console.error('Failed to get roles:', error)
-    }
-  }
-}
+// 不再需要获取角色列表，因为API不再需要role字段
 
-// 页面挂载时获取权限策略列表和角色列表
+// 页面挂载时获取权限策略列表
 onMounted(() => {
   fetchPermissionPolicies()
-  getRoleList()
 })
 </script>
 

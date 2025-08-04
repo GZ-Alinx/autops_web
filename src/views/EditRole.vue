@@ -11,8 +11,8 @@
           <el-input v-model="roleForm.name" placeholder="请输入角色名称"></el-input>
         </el-form-item>
         <el-form-item label="角色描述" prop="description">
-          <el-input v-model="roleForm.description" type="textarea" placeholder="请输入角色描述"></el-input>
-        </el-form-item>
+            <el-input v-model="roleForm.description" type="textarea" placeholder="请输入角色描述"></el-input>
+          </el-form-item>
       </el-form>
       <div class="btn-container">
         <el-button @click="handleCancel">取消</el-button>
@@ -24,19 +24,20 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import MessageUtil from '../utils/message.js'
 import { useRouter, useRoute } from 'vue-router'
 import { getRoleDetail, updateRole } from '../api/role'
 
 const router = useRouter()
 const route = useRoute()
-const roleId = route.params.id
+// 确保角色ID是数字类型
+const roleId = Number(route.params.id)
 
 // 角色表单数据
 const roleForm = reactive({
-  ID: '',
-  name: '',
-  description: ''
+    ID: '',
+    name: '',
+    description: ''
 })
 
 // 表单规则
@@ -56,11 +57,12 @@ const roleFormRef = ref(null)
 const getRoleInfo = async () => {
   try {
     const res = await getRoleDetail(roleId)
-    roleForm.ID = res.data.id
+    // 始终使用路由参数中的roleId作为更新时的ID
+    roleForm.ID = roleId
     roleForm.name = res.data.name
     roleForm.description = res.data.description || ''
   } catch (error) {
-    ElMessage.error('获取角色详情失败')
+    MessageUtil.error('获取角色详情失败')
     console.error('Failed to get role detail:', error)
     router.push('/dashboard/roles')
   }
@@ -71,16 +73,34 @@ const submitForm = async () => {
   roleFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        await updateRole({
-          ID: roleForm.ID,
-          name: roleForm.name,
-          description: roleForm.description
-        })
-        ElMessage.success('更新角色成功')
-        router.push('/dashboard/roles')
-      } catch (error) {
-        ElMessage.error('更新角色失败')
-        console.error('Failed to update role:', error)
+          // 构造完整的角色数据对象，确保与API要求的字段结构匹配
+          const roleData = { ID: roleForm.ID, name: roleForm.name, description: roleForm.description }
+          console.log('更新角色参数:', roleData)
+          const response = await updateRole(roleData)
+          console.log('更新角色响应:', response)
+          MessageUtil.success('更新角色成功')
+          router.push('/dashboard/roles')
+        } catch (error) {
+          // 输出详细错误信息
+          console.error('Failed to update role:', error);
+          console.error('错误状态:', error.response?.status);
+          console.error('错误URL:', error.config?.url);
+          console.error('错误请求参数:', error.config?.data);
+          console.error('错误响应数据:', error.response?.data);
+          
+          // 根据错误类型显示不同的提示
+          let errorMessage = '更新角色失败';
+          if (error.response && error.response.status === 404) {
+            errorMessage = `未找到该角色(ID: ${roleId})，请确认角色ID是否存在`;
+          } else if (error.response && error.response.status === 400) {
+            errorMessage = '请求参数错误: ' + (error.response.data.message || '无效的请求');
+          } else if (error.message === '无效的角色ID') {
+            errorMessage = `无效的角色ID: ${roleId}`;
+          } else if (error.response) {
+            errorMessage += ': ' + (error.response.data.message || error.message);
+          }
+          
+          MessageUtil.error(errorMessage)
       }
     }
   })
